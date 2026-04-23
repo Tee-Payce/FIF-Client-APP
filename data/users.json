@@ -1,0 +1,23 @@
+[
+  {
+    "id": "1",
+    "username": "admin",
+    "password": "admin",
+    "role": "system_admin",
+    "subscription": "VVIP"
+  },
+  {
+    "id": "2",
+    "username": "posts_admin",
+    "password": "admin",
+    "role": "posts_admin",
+    "subscription": "Premium"
+  },
+  {
+    "id": "3",
+    "username": "user",
+    "password": "user",
+    "role": "general_user",
+    "subscription": "Standard"
+  }
+]

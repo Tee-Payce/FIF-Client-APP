@@ -1,0 +1,18 @@
+[
+  {
+    "id": "1",
+    "type": "image",
+    "mediaUrl": "https://via.placeholder.com/300",
+    "caption": "Daily inspiration",
+    "timestamp": "2024-04-17T10:00:00Z",
+    "author": "posts_admin"
+  },
+  {
+    "id": "2",
+    "type": "video",
+    "mediaUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    "caption": "Morning prayer",
+    "timestamp": "2024-04-17T08:00:00Z",
+    "author": "posts_admin"
+  }
+]

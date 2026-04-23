@@ -1,0 +1,16 @@
+[
+  {
+    "id": "1",
+    "title": "Sermon on Faith",
+    "thumbnail": "https://via.placeholder.com/150",
+    "duration": "30:00",
+    "videoUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+  },
+  {
+    "id": "2",
+    "title": "Hope and Grace",
+    "thumbnail": "https://via.placeholder.com/150",
+    "duration": "25:30",
+    "videoUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
+  }
+]

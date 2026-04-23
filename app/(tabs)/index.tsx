@@ -1,98 +1,164 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
+import { useAuth } from '../../context/AuthContext';
+import { getStories, reactToStory } from '../../src/api/stories';
+import { getSocket } from '../../src/socket';
+import PostCard from '../../components/PostCard';
+import { useRouter } from 'expo-router';
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const { user } = useAuth();
+  const [activeStories, setActiveStories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const router = useRouter();
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const fetchStories = async (isRefreshing = false) => {
+    if (isRefreshing) setRefreshing(true);
+    try {
+      const response = await getStories();
+      const sorted = response.data.sort((a: any, b: any) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      setActiveStories(sorted);
+    } catch (error) {
+      console.error('Error fetching stories:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStories();
+
+    const socket = getSocket();
+    if (socket) {
+      socket.on('story:created', (newStory: any) => {
+        setActiveStories(prev => [newStory, ...prev]);
+      });
+
+      socket.on('story:deleted', (deletedId: string) => {
+        setActiveStories(prev => prev.filter(s => s.id !== deletedId));
+      });
+
+      socket.on('reaction:update', ({ entityId, entityType, count }) => {
+        if (entityType === 'story') {
+          setActiveStories(prev => prev.map(s => 
+            s.id === entityId ? { ...s, reactionCount: count } : s
+          ));
+        }
+      });
+    }
+
+    return () => {
+      if (socket) {
+        socket.off('story:created');
+        socket.off('story:deleted');
+        socket.off('reaction:update');
+      }
+    };
+  }, []);
+
+  const handleReact = async (storyId: string, type: string) => {
+    try {
+      // Optimistic Update
+      setActiveStories(prev => prev.map(s => {
+        if (s.id === storyId) {
+          const newHasReacted = !s.hasReacted;
+          return {
+            ...s,
+            hasReacted: newHasReacted,
+            reactionCount: newHasReacted ? (s.reactionCount || 0) + 1 : Math.max(0, (s.reactionCount || 0) - 1)
+          };
+        }
+        return s;
+      }));
+
+      await reactToStory(storyId, type);
+    } catch (error) {
+      console.error('Reaction failed:', error);
+      // Revert on error if necessary
+      fetchStories();
+    }
+  };
+
+  const onRefresh = () => fetchStories(true);
+
+  if (loading && !refreshing) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4B0082" />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Apostles Update</Text>
+      </View>
+      <FlatList
+        data={activeStories}
+        renderItem={({ item }) => (
+          <PostCard
+            post={item}
+            onReact={(type) => handleReact(item.id, type)}
+            onComment={() => router.push(`/stories/${item.id}`)}
+          />
+        )}
+        keyExtractor={(item) => item.id}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#4B0082']} />
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No updates available at the moment.</Text>
+          </View>
+        }
+        contentContainerStyle={styles.listContent}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  container: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
+    backgroundColor: '#FFFFFF',
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  header: {
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#4B0082',
+  },
+  listContent: {
+    paddingBottom: 30,
+  },
+  emptyContainer: {
+    flex: 1,
+    marginTop: 100,
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 24,
   },
 });

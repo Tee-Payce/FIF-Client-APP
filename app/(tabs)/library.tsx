@@ -117,6 +117,7 @@ export default function LibraryScreen() {
       </View>
       {activeTab === 'books' ? (
         <FlatList
+          key="books-3-col"
           data={getAccessibleBooks()}
           renderItem={renderBook}
           keyExtractor={(item) => item.id}
@@ -125,6 +126,7 @@ export default function LibraryScreen() {
         />
       ) : (
         <FlatList
+          key="sermons-2-col"
           data={sermons}
           renderItem={renderSermon}
           keyExtractor={(item) => item.id}

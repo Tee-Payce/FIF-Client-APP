@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { useLibrary } from '../../context/LibraryContext';
@@ -8,10 +8,17 @@ import { getBooks, getSecureBookUrl } from '../../src/api/books';
 import { WebView } from 'react-native-webview';
 import { Platform } from 'react-native';
 import * as ScreenCapture from 'expo-screen-capture';
+import { useTheme } from '../../src/theme/ThemeContext';
+import { AppHeader } from '../../components/ui/AppHeader';
+import { Loader } from '../../components/ui/Loader';
+import { ArrowLeft } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 
 export default function BookViewerScreen() {
   const { id } = useLocalSearchParams();
   const { user } = useAuth();
+  const { theme } = useTheme();
+  const router = useRouter();
   const { isBookPurchased } = useLibrary();
 
   const [book, setBook] = useState<any>(null);
@@ -59,17 +66,21 @@ export default function BookViewerScreen() {
   }, [id]);
 
   if (loading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#4B0082" style={{ marginTop: 50 }} />
-      </View>
-    );
+    return <Loader fullScreen />;
   }
 
   if (error || !book || !secureUrl) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.error}>{error || 'Book not found'}</Text>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <AppHeader 
+          title="Error" 
+          leftAction={
+            <TouchableOpacity onPress={() => router.back()} style={{ padding: 8 }}>
+              <ArrowLeft color={theme.icon} size={24} />
+            </TouchableOpacity>
+          }
+        />
+        <Text style={[styles.error, { color: theme.error }]}>{error || 'Book not found'}</Text>
       </View>
     );
   }
@@ -85,7 +96,15 @@ export default function BookViewerScreen() {
   const pdfUrl = Platform.OS === 'android' ? getAndroidViewerUrl() : secureUrl;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <AppHeader 
+        title={book.title || "Reader"} 
+        leftAction={
+          <TouchableOpacity onPress={() => router.back()} style={{ padding: 8 }}>
+            <ArrowLeft color={theme.icon} size={24} />
+          </TouchableOpacity>
+        }
+      />
       <View style={styles.warning}>
         <Text style={styles.warningText}>Protected Content — Screenshots are prohibited</Text>
         {Platform.OS === 'android' && (
@@ -108,17 +127,17 @@ export default function BookViewerScreen() {
 
       {/* Watermark Overlay - Absolute positioned over the WebView */}
       <View style={styles.watermarkOverlay} pointerEvents="none">
-         <Text style={styles.watermarkText}>{user?.email}</Text>
-         <Text style={styles.watermarkText}>{user?.email}</Text>
-         <Text style={styles.watermarkText}>{user?.email}</Text>
+         <Text style={[styles.watermarkText, { color: theme.text }]}>{user?.email}</Text>
+         <Text style={[styles.watermarkText, { color: theme.text }]}>{user?.email}</Text>
+         <Text style={[styles.watermarkText, { color: theme.text }]}>{user?.email}</Text>
       </View>
       
       <WebView 
         source={{ uri: pdfUrl }}
-        style={styles.webview}
+        style={[styles.webview, { backgroundColor: theme.background }]}
         startInLoadingState={true}
         renderLoading={() => (
-          <ActivityIndicator size="large" color="#4B0082" style={styles.loadingIndicator} />
+          <Loader />
         )}
       />
     </View>
@@ -128,7 +147,6 @@ export default function BookViewerScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   error: {
     textAlign: 'center',
@@ -171,7 +189,6 @@ const styles = StyleSheet.create({
   watermarkText: {
     fontSize: 40,
     fontWeight: 'bold',
-    color: '#000',
     textAlign: 'center',
     marginVertical: 150,
   },
@@ -199,14 +216,6 @@ const styles = StyleSheet.create({
   },
   webview: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
-  },
-  loadingIndicator: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    marginLeft: -18,
-    marginTop: -18,
   },
   placeholder: {
     flex: 1,

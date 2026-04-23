@@ -1,27 +1,40 @@
 import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useLibrary } from '../../context/LibraryContext';
+import { useTheme } from '../../src/theme/ThemeContext';
+import { typography } from '../../src/theme/typography';
+import { AppHeader } from '../../components/ui/AppHeader';
+import { Card } from '../../components/ui/Card';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { LibraryBig } from 'lucide-react-native';
 
 export default function MyLibraryScreen() {
   const { purchasedBooks } = useLibrary();
   const router = useRouter();
 
+  const { theme } = useTheme();
+
   const renderBook = ({ item }: { item: any }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => router.push(`/book/${item.id}`)}
-    >
-      <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.offline}>Available Offline</Text>
+    <TouchableOpacity onPress={() => router.push(`/book/${item.id}`)}>
+      <Card>
+        <Text style={[typography.title, { color: theme.text }]}>{item.title}</Text>
+        <Text style={[typography.caption, { color: theme.primary, marginTop: 8 }]}>Available Offline / Purchased</Text>
+      </Card>
     </TouchableOpacity>
   );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>My Library</Text>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <AppHeader title="My Library" />
       {purchasedBooks.length === 0 ? (
-        <Text style={styles.empty}>No purchased books yet.</Text>
+        <EmptyState 
+          title="Your Library is Empty" 
+          message="Books you purchase or download will appear here." 
+          icon={<LibraryBig size={48} color={theme.textSecondary} />} 
+          actionTitle="Browse Catalog"
+          onAction={() => router.push('/library')}
+        />
       ) : (
         <FlatList
           data={purchasedBooks}
@@ -37,35 +50,8 @@ export default function MyLibraryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#4B0082',
-    marginBottom: 20,
   },
   list: {
-    padding: 10,
-  },
-  card: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  empty: {
-    textAlign: 'center',
-    color: '#666',
-  },
-  offline: {
-    color: '#4B0082',
-    fontSize: 12,
+    padding: 16,
   },
 });

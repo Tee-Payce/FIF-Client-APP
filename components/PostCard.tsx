@@ -1,7 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Share } from 'react-native';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
+import { Heart, MessageCircle, Share2, MoreHorizontal } from 'lucide-react-native';
+import { useTheme } from '../src/theme/ThemeContext';
+import { typography } from '../src/theme/typography';
+import { Avatar } from './ui/Avatar';
+import { Card } from './ui/Card';
 import { timeAgo } from '../src/utils/date';
 import { VideoView, useVideoPlayer } from 'expo-video';
 
@@ -12,6 +16,7 @@ interface PostCardProps {
 }
 
 const PostCard: React.FC<PostCardProps> = ({ post, onReact, onComment }) => {
+  const { theme } = useTheme();
   const isVideo = post.mediaType === 'video';
   const player = useVideoPlayer(post.mediaUrl || '', (player) => {
     player.loop = true;
@@ -32,26 +37,24 @@ const PostCard: React.FC<PostCardProps> = ({ post, onReact, onComment }) => {
   if (!post) return null;
 
   return (
-    <View style={styles.card}>
+    <Card noPadding style={{ marginBottom: 16, marginHorizontal: 16 }}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <View style={styles.avatarPlaceholder}>
-             <Text style={styles.avatarText}>F</Text>
-          </View>
+          <Avatar name="FIF Ministries" size={40} style={{ marginRight: 12 }} />
           <View>
-            <Text style={styles.channelName}>FIF Ministries</Text>
-            <Text style={styles.timestamp}>{timeAgo(post.createdAt)}</Text>
+            <Text style={[typography.subtitle, { color: theme.text }]}>FIF Ministries</Text>
+            <Text style={[typography.caption, { color: theme.textSecondary }]}>{timeAgo(post.createdAt)}</Text>
           </View>
         </View>
         <TouchableOpacity>
-          <Ionicons name="ellipsis-horizontal" size={20} color="#666" />
+          <MoreHorizontal size={20} color={theme.icon} />
         </TouchableOpacity>
       </View>
 
       {/* Caption (Above Media for LinkedIn feel) */}
       <View style={styles.content}>
-        <Text style={styles.caption}>{post.caption}</Text>
+        <Text style={[typography.body, { color: theme.text }]}>{post.caption}</Text>
       </View>
 
       {/* Media */}
@@ -77,94 +80,50 @@ const PostCard: React.FC<PostCardProps> = ({ post, onReact, onComment }) => {
       ) : null}
 
       {/* Actions Row */}
-      <View style={styles.actions}>
+      <View style={[styles.actions, { borderTopColor: theme.border }]}>
         <TouchableOpacity style={styles.actionButton} onPress={() => onReact('heart')}>
-          <Ionicons 
-            name={post.hasReacted ? "heart" : "heart-outline"} 
+          <Heart 
             size={22} 
-            color={post.hasReacted ? "#E91E63" : "#4B0082"} 
+            color={post.hasReacted ? theme.error : theme.icon} 
+            fill={post.hasReacted ? theme.error : 'transparent'}
           />
-          <Text style={[styles.actionText, post.hasReacted && styles.activeActionText]}>
+          <Text style={[typography.bodySmall, { color: post.hasReacted ? theme.error : theme.textSecondary }]}>
             {post.reactionCount || 0}
           </Text>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.actionButton} onPress={onComment}>
-          <Ionicons name="chatbubble-outline" size={20} color="#4B0082" />
-          <Text style={styles.actionText}>Comment</Text>
+          <MessageCircle size={20} color={theme.icon} />
+          <Text style={[typography.bodySmall, { color: theme.textSecondary }]}>Comment</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-          <Ionicons name="share-social-outline" size={20} color="#4B0082" />
-          <Text style={styles.actionText}>Share</Text>
+          <Share2 size={20} color={theme.icon} />
+          <Text style={[typography.bodySmall, { color: theme.textSecondary }]}>Share</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </Card>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    marginBottom: 16,
-    marginHorizontal: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#EFEFEF',
-  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 12,
+    padding: 16,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  avatarPlaceholder: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#4B0082',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  avatarText: {
-    color: '#D4AF37',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  channelName: {
-    fontWeight: '700',
-    fontSize: 14,
-    color: '#1A1A1A',
-  },
-  timestamp: {
-    fontSize: 11,
-    color: '#757575',
-    marginTop: 1,
-  },
   content: {
-    paddingHorizontal: 12,
-    paddingBottom: 10,
-  },
-  caption: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#262626',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
   },
   mediaContainer: {
     width: '100%',
-    aspectRatio: 1.2, // LinkedIn often uses a slightly wider than square aspect
-    backgroundColor: '#F3F3F3',
+    aspectRatio: 4/5, // More vertical Instagram-like ratio
   },
   media: {
     width: '100%',
@@ -174,21 +133,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-  },
-  actionText: {
-    fontSize: 13,
-    color: '#666', // Muted action text like social feeds
-    fontWeight: '600',
-  },
-  activeActionText: {
-    color: '#E91E63',
+    gap: 8,
   },
 });
 

@@ -1,15 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, FlatList, Image, StyleSheet, ActivityIndicator, Modal, Button, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, Modal, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { useLibrary } from '../../context/LibraryContext';
 import { getBooks } from '../../src/api/books';
 import { getSermons } from '../../src/api/sermons';
 import { getSocket } from '../../src/socket';
+import { useTheme } from '../../src/theme/ThemeContext';
+import { typography } from '../../src/theme/typography';
+import { AppHeader } from '../../components/ui/AppHeader';
+import { Loader } from '../../components/ui/Loader';
+import { Button } from '../../components/ui/Button';
 
 export default function LibraryScreen() {
   const [activeTab, setActiveTab] = useState<'books' | 'sermons'>('books');
   const { user } = useAuth();
+  const { theme } = useTheme();
   const { purchaseBook, isBookPurchased } = useLibrary();
   const router = useRouter();
 
@@ -63,53 +69,50 @@ export default function LibraryScreen() {
   const renderBook = ({ item }: { item: any }) => {
     return (
       <TouchableOpacity
-        style={styles.card3Col}
+        style={[styles.card3Col, { backgroundColor: theme.surface, shadowColor: theme.isDark ? 'transparent' : '#000' }]}
         onPress={() => setSelectedBook(item)}
       >
         <View style={[styles.cover3Col, styles.coverPlaceholder]}>
           <Text style={styles.coverIconSmall}>📚</Text>
         </View>
-        <Text style={styles.titleSmall} numberOfLines={2}>{item.title}</Text>
-        <Text style={styles.authorSmall} numberOfLines={1}>{item.author}</Text>
+        <Text style={[typography.caption, { color: theme.text, marginTop: 8, textAlign: 'center', fontWeight: 'bold' }]} numberOfLines={2}>{item.title}</Text>
+        <Text style={[typography.caption, { color: theme.textSecondary, fontSize: 10 }]} numberOfLines={1}>{item.author}</Text>
       </TouchableOpacity>
     );
   };
 
   const renderSermon = ({ item }: { item: any }) => (
     <TouchableOpacity
-      style={styles.card}
+      style={[styles.card, { backgroundColor: theme.surface, shadowColor: theme.isDark ? 'transparent' : '#000' }]}
       onPress={() => router.push(`/sermon/${item.id}`)}
     >
       <View style={[styles.cover, styles.coverPlaceholder]}>
         <Text style={styles.coverIcon}>🎥</Text>
       </View>
-      <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
-      <Text style={styles.duration}>{item.duration}</Text>
+      <Text style={[typography.body, { color: theme.text, marginTop: 8 }]} numberOfLines={2}>{item.title}</Text>
+      <Text style={[typography.caption, { color: theme.textSecondary }]}>{item.duration}</Text>
     </TouchableOpacity>
   );
 
   if (loading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#4B0082" style={{ marginTop: 50 }} />
-      </View>
-    );
+    return <Loader fullScreen />;
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.tabContainer}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <AppHeader title="Catalog" />
+      <View style={[styles.tabContainer, { backgroundColor: theme.surface }]}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'books' && styles.activeTab]}
+          style={[styles.tab, activeTab === 'books' && { borderBottomColor: theme.primary, borderBottomWidth: 2 }]}
           onPress={() => setActiveTab('books')}
         >
-          <Text style={[styles.tabText, activeTab === 'books' && styles.activeTabText]}>Books</Text>
+          <Text style={[typography.subtitle, { color: activeTab === 'books' ? theme.primary : theme.textSecondary }]}>Books</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'sermons' && styles.activeTab]}
+          style={[styles.tab, activeTab === 'sermons' && { borderBottomColor: theme.primary, borderBottomWidth: 2 }]}
           onPress={() => setActiveTab('sermons')}
         >
-          <Text style={[styles.tabText, activeTab === 'sermons' && styles.activeTabText]}>Video Sermons</Text>
+          <Text style={[typography.subtitle, { color: activeTab === 'sermons' ? theme.primary : theme.textSecondary }]}>Video Sermons</Text>
         </TouchableOpacity>
       </View>
       {activeTab === 'books' ? (
@@ -138,50 +141,46 @@ export default function LibraryScreen() {
         onRequestClose={() => setSelectedBook(null)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
             {selectedBook && (
               <>
-                <Text style={styles.modalTitle}>{selectedBook.title}</Text>
-                <Text style={styles.modalAuthor}>By {selectedBook.author}</Text>
+                <Text style={[typography.h3, { color: theme.text, marginBottom: 8, textAlign: 'center' }]}>{selectedBook.title}</Text>
+                <Text style={[typography.body, { color: theme.textSecondary, marginBottom: 16 }]}>By {selectedBook.author}</Text>
                 
-                <View style={styles.modalDetailsRow}>
-                  <Text style={styles.modalDetailText}>Category: {selectedBook.category?.toUpperCase()}</Text>
-                  <Text style={styles.modalDetailText}>Pages: {selectedBook.pages || 'N/A'}</Text>
+                <View style={[styles.modalDetailsRow, { borderColor: theme.border }]}>
+                  <Text style={[typography.bodySmall, { color: theme.textSecondary }]}>Category: {selectedBook.category?.toUpperCase()}</Text>
+                  <Text style={[typography.bodySmall, { color: theme.textSecondary }]}>Pages: {selectedBook.pages || 'N/A'}</Text>
                 </View>
 
-                <Text style={styles.modalPrice}>
+                <Text style={[typography.h2, { color: theme.secondary, marginBottom: 24 }]}>
                   {selectedBook.price > 0 ? `Price: $${selectedBook.price}` : 'FREE'}
                 </Text>
 
                 <View style={styles.modalActions}>
                   {isBookPurchased(selectedBook.id) || selectedBook.price === 0 ? (
-                    <TouchableOpacity
-                      style={styles.modalButtonPrimary}
+                    <Button 
+                      title="Read Online" 
                       onPress={() => {
                         setSelectedBook(null);
                         router.push(`/book/${selectedBook.id}`);
-                      }}
-                    >
-                      <Text style={styles.modalButtonText}>Read Online</Text>
-                    </TouchableOpacity>
+                      }} 
+                    />
                   ) : (
-                    <TouchableOpacity
-                      style={styles.modalButtonSecondary}
+                    <Button 
+                      title={`Buy Book - $${selectedBook.price}`} 
+                      variant="secondary"
                       onPress={() => {
                         purchaseBook(selectedBook);
                         setSelectedBook(null);
-                      }}
-                    >
-                      <Text style={styles.modalButtonText}>Buy Book - ${selectedBook.price}</Text>
-                    </TouchableOpacity>
+                      }} 
+                    />
                   )}
                   
-                  <TouchableOpacity
-                    style={styles.modalButtonClose}
-                    onPress={() => setSelectedBook(null)}
-                  >
-                    <Text style={styles.modalButtonCloseText}>Close</Text>
-                  </TouchableOpacity>
+                  <Button 
+                    title="Close" 
+                    variant="ghost"
+                    onPress={() => setSelectedBook(null)} 
+                  />
                 </View>
               </>
             )}
@@ -195,25 +194,14 @@ export default function LibraryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: '#F5F5F5',
   },
   tab: {
     flex: 1,
     padding: 15,
     alignItems: 'center',
-  },
-  activeTab: {
-    backgroundColor: '#4B0082',
-  },
-  tabText: {
-    fontSize: 16,
-  },
-  activeTabText: {
-    color: '#FFFFFF',
   },
   list: {
     padding: 10,
@@ -221,11 +209,9 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     margin: 5,
-    backgroundColor: '#F5F5F5',
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 10,
     alignItems: 'center',
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 5,
@@ -235,11 +221,9 @@ const styles = StyleSheet.create({
     flex: 1,
     margin: 5,
     maxWidth: (Dimensions.get('window').width / 3) - 15, // ensure 3 fit properly
-    backgroundColor: '#F5F5F5',
     borderRadius: 8,
     padding: 5,
     alignItems: 'center',
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -316,10 +300,9 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#FFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
@@ -327,69 +310,17 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 10,
   },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 5,
-    textAlign: 'center',
-  },
-  modalAuthor: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 15,
-  },
   modalDetailsRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     width: '100%',
-    marginBottom: 15,
-    paddingVertical: 10,
+    marginBottom: 20,
+    paddingVertical: 12,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: '#EEE',
-  },
-  modalDetailText: {
-    fontSize: 14,
-    color: '#555',
-    fontWeight: '500',
-  },
-  modalPrice: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#D4AF37',
-    marginBottom: 25,
   },
   modalActions: {
     width: '100%',
-    gap: 10,
-  },
-  modalButtonPrimary: {
-    backgroundColor: '#4B0082',
-    paddingVertical: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  modalButtonSecondary: {
-    backgroundColor: '#D4AF37',
-    paddingVertical: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  modalButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  modalButtonClose: {
-    paddingVertical: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 5,
-  },
-  modalButtonCloseText: {
-    color: '#666',
-    fontSize: 16,
-    fontWeight: 'bold',
+    gap: 12,
   },
 });

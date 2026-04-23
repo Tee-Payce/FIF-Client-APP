@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, FlatList, StyleSheet, RefreshControl } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { getStories, reactToStory } from '../../src/api/stories';
 import { getSocket } from '../../src/socket';
 import PostCard from '../../components/PostCard';
 import { useRouter } from 'expo-router';
+import { useTheme } from '../../src/theme/ThemeContext';
+import { AppHeader } from '../../components/ui/AppHeader';
+import { Loader } from '../../components/ui/Loader';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { Rss } from 'lucide-react-native';
 
 export default function HomeScreen() {
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [activeStories, setActiveStories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -86,18 +92,12 @@ export default function HomeScreen() {
   const onRefresh = () => fetchStories(true);
 
   if (loading && !refreshing) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4B0082" />
-      </View>
-    );
+    return <Loader fullScreen />;
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Apostles Update</Text>
-      </View>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <AppHeader title="Apostles Update" />
       <FlatList
         data={activeStories}
         renderItem={({ item }) => (
@@ -109,14 +109,16 @@ export default function HomeScreen() {
         )}
         keyExtractor={(item) => item.id}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#4B0082']} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.primary]} />
         }
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No updates available at the moment.</Text>
-          </View>
+          <EmptyState 
+            title="No Updates Yet" 
+            message="Check back later for new messages and updates from the Apostles." 
+            icon={<Rss size={48} color={theme.textSecondary} />} 
+          />
         }
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingTop: 16 }]}
       />
     </View>
   );
@@ -125,40 +127,8 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    paddingTop: 20,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#4B0082',
   },
   listContent: {
     paddingBottom: 30,
-  },
-  emptyContainer: {
-    flex: 1,
-    marginTop: 100,
-    alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 24,
   },
 });

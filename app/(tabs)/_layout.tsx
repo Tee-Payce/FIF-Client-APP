@@ -1,45 +1,49 @@
 import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Home, Library, BookOpen, User } from 'lucide-react-native';
+import { useTheme } from '../../src/theme/ThemeContext';
 
 export default function TabLayout() {
+  const { theme } = useTheme();
+
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#4B0082',
-        tabBarInactiveTintColor: '#666',
+        headerShown: false, // We use custom AppHeaders now
+        tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: theme.icon,
         tabBarStyle: {
-          backgroundColor: '#FFFFFF',
+          backgroundColor: theme.surface,
+          borderTopColor: theme.border,
+          elevation: theme.isDark ? 0 : 8,
+          shadowOpacity: theme.isDark ? 0 : 0.1,
+          borderTopWidth: 1,
         },
-        headerStyle: {
-          backgroundColor: '#4B0082',
-        },
-        headerTintColor: '#FFFFFF',
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: 'Feed',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
+            <Home size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="library"
         options={{
-          title: 'Library',
+          title: 'Book Shop',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="book" size={size} color={color} />
+            <Library size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="my-library"
         options={{
-          title: 'My Library',
+          title: 'My Books',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="library" size={size} color={color} />
+            <BookOpen size={size} color={color} />
           ),
         }}
       />
@@ -48,7 +52,7 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person" size={size} color={color} />
+            <User size={size} color={color} />
           ),
         }}
       />

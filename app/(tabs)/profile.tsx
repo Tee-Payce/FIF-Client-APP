@@ -1,26 +1,63 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../src/theme/ThemeContext';
+import { typography } from '../../src/theme/typography';
+import { AppHeader } from '../../components/ui/AppHeader';
+import { Card } from '../../components/ui/Card';
+import { Avatar } from '../../components/ui/Avatar';
+import { Button } from '../../components/ui/Button';
+import { IconButton } from '../../components/ui/IconButton';
+import { Settings } from 'lucide-react-native';
+import { SettingsModal } from '../../components/SettingsModal';
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const { theme } = useTheme();
+  const [settingsVisible, setSettingsVisible] = useState(false);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Profile</Text>
-      {user && (
-        <View style={styles.info}>
-          <Text style={styles.label}>Username: {user.username}</Text>
-          <Text style={styles.label}>Role: {user.role}</Text>
-          <Text style={styles.label}>Subscription: {user.subscription}</Text>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <AppHeader 
+        title="Profile" 
+        rightAction={
+          <IconButton 
+            icon={<Settings color={theme.icon} size={24} />} 
+            onPress={() => setSettingsVisible(true)} 
+          />
+        }
+      />
+      
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.headerSection}>
+          <Avatar name={user?.username || user?.email || 'User'} size={80} style={{ marginBottom: 16 }} />
+          <Text style={[typography.h2, { color: theme.text }]}>{user?.username || 'Believer'}</Text>
+          <Text style={[typography.body, { color: theme.textSecondary }]}>{user?.email}</Text>
+          
+          <View style={[styles.badge, { backgroundColor: theme.secondary + '20' }]}>
+            <Text style={[typography.caption, { color: theme.secondary, fontWeight: 'bold' }]}>
+              {user?.subscription?.toUpperCase() || 'STANDARD'} TIER
+            </Text>
+          </View>
         </View>
-      )}
-      <TouchableOpacity style={styles.upgradeButton}>
-        <Text style={styles.upgradeText}>Upgrade Subscription</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-        <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity>
+
+        <Card>
+          <View style={styles.infoRow}>
+            <Text style={[typography.subtitle, { color: theme.textSecondary }]}>Account Role</Text>
+            <Text style={[typography.subtitle, { color: theme.text, textTransform: 'capitalize' }]}>{user?.role || 'User'}</Text>
+          </View>
+        </Card>
+
+        <Card style={{ marginTop: 24 }}>
+          <Text style={[typography.title, { color: theme.text, marginBottom: 12 }]}>Subscription</Text>
+          <Text style={[typography.body, { color: theme.textSecondary, marginBottom: 20 }]}>
+            Upgrade your subscription to access premium and VVIP content across the library and sermons.
+          </Text>
+          <Button title="Upgrade to Premium" onPress={() => {}} variant="secondary" />
+        </Card>
+      </ScrollView>
+
+      <SettingsModal visible={settingsVisible} onClose={() => setSettingsVisible(false)} />
     </View>
   );
 }
@@ -28,41 +65,24 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    padding: 20,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#4B0082',
-    marginBottom: 20,
+  scrollContent: {
+    padding: 16,
   },
-  info: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    marginBottom: 10,
-  },
-  upgradeButton: {
-    backgroundColor: '#D4AF37',
-    padding: 15,
-    borderRadius: 5,
+  headerSection: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginVertical: 32,
   },
-  upgradeText: {
-    color: '#FFFFFF',
-    fontSize: 16,
+  badge: {
+    marginTop: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: 20,
   },
-  logoutButton: {
-    backgroundColor: '#FF0000',
-    padding: 15,
-    borderRadius: 5,
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    paddingVertical: 8,
   },
-  logoutText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-  },
-});
+});

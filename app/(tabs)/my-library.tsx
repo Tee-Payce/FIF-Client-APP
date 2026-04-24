@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useLibrary } from '../../context/LibraryContext';
 import { useTheme } from '../../src/theme/ThemeContext';
@@ -15,6 +15,10 @@ export default function MyLibraryScreen() {
 
   const { theme } = useTheme();
 
+  const backgroundImageSource = theme.isDark 
+    ? require('../../assets/images/app-background.png')
+    : null;
+
   const renderBook = ({ item }: { item: any }) => (
     <TouchableOpacity onPress={() => router.push(`/book/${item.id}`)}>
       <Card>
@@ -24,9 +28,9 @@ export default function MyLibraryScreen() {
     </TouchableOpacity>
   );
 
-  return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <AppHeader title="My Library" />
+  const content = (
+    <>
+      <AppHeader title="My Library" transparent={theme.isDark} />
       {purchasedBooks.length === 0 ? (
         <EmptyState 
           title="Your Library is Empty" 
@@ -43,6 +47,22 @@ export default function MyLibraryScreen() {
           contentContainerStyle={styles.list}
         />
       )}
+    </>
+  );
+
+  return (
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      {backgroundImageSource ? (
+        <ImageBackground 
+          source={backgroundImageSource} 
+          style={styles.backgroundImage}
+          imageStyle={styles.imageStyle}
+        >
+          {content}
+        </ImageBackground>
+      ) : (
+        content
+      )}
     </View>
   );
 }
@@ -50,6 +70,13 @@ export default function MyLibraryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  backgroundImage: {
+    flex: 1,
+  },
+  imageStyle: {
+    resizeMode: 'cover',
+    opacity: 0.8,
   },
   list: {
     padding: 16,

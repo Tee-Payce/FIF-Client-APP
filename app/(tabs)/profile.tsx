@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ImageBackground } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import { typography } from '../../src/theme/typography';
@@ -16,10 +16,15 @@ export default function ProfileScreen() {
   const { theme } = useTheme();
   const [settingsVisible, setSettingsVisible] = useState(false);
 
-  return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+  const backgroundImageSource = theme.isDark 
+    ? require('../../assets/images/app-background.png')
+    : null;
+
+  const content = (
+    <>
       <AppHeader 
         title="Profile" 
+        transparent={theme.isDark}
         rightAction={
           <IconButton 
             icon={<Settings color={theme.icon} size={24} />} 
@@ -58,6 +63,22 @@ export default function ProfileScreen() {
       </ScrollView>
 
       <SettingsModal visible={settingsVisible} onClose={() => setSettingsVisible(false)} />
+    </>
+  );
+
+  return (
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      {backgroundImageSource ? (
+        <ImageBackground 
+          source={backgroundImageSource} 
+          style={styles.backgroundImage}
+          imageStyle={styles.imageStyle}
+        >
+          {content}
+        </ImageBackground>
+      ) : (
+        content
+      )}
     </View>
   );
 }
@@ -65,6 +86,13 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  backgroundImage: {
+    flex: 1,
+  },
+  imageStyle: {
+    resizeMode: 'cover',
+    opacity: 0.8,
   },
   scrollContent: {
     padding: 16,
@@ -85,4 +113,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
   },
-});
+});

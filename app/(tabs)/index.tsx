@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, FlatList, StyleSheet, RefreshControl } from 'react-native';
+import { View, FlatList, StyleSheet, RefreshControl, ImageBackground } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { getStories, reactToStory } from '../../src/api/stories';
 import { getSocket } from '../../src/socket';
@@ -95,31 +95,70 @@ export default function HomeScreen() {
     return <Loader fullScreen />;
   }
 
+  const backgroundImageSource = theme.isDark 
+    ? require('../../assets/images/app-background.png')
+    : null;
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <AppHeader title="Apostles Update" />
-      <FlatList
-        data={activeStories}
-        renderItem={({ item }) => (
-          <PostCard
-            post={item}
-            onReact={(type) => handleReact(item.id, type)}
-            onComment={() => router.push(`/stories/${item.id}`)}
+      {backgroundImageSource && (
+        <ImageBackground 
+          source={backgroundImageSource} 
+          style={styles.backgroundImage}
+          imageStyle={styles.imageStyle}
+        >
+          <AppHeader title="Apostles Update" transparent={theme.isDark} />
+          <FlatList
+            data={activeStories}
+            renderItem={({ item }) => (
+              <PostCard
+                post={item}
+                onReact={(type) => handleReact(item.id, type)}
+                onComment={() => router.push(`/stories/${item.id}`)}
+              />
+            )}
+            keyExtractor={(item) => item.id}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.primary]} />
+            }
+            ListEmptyComponent={
+              <EmptyState 
+                title="No Updates Yet" 
+                message="Check back later for new messages and updates from the Apostles." 
+                icon={<Rss size={48} color={theme.textSecondary} />} 
+              />
+            }
+            contentContainerStyle={[styles.listContent, { paddingTop: 16 }]}
           />
-        )}
-        keyExtractor={(item) => item.id}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.primary]} />
-        }
-        ListEmptyComponent={
-          <EmptyState 
-            title="No Updates Yet" 
-            message="Check back later for new messages and updates from the Apostles." 
-            icon={<Rss size={48} color={theme.textSecondary} />} 
+        </ImageBackground>
+      )}
+      {!backgroundImageSource && (
+        <>
+          <AppHeader title="Apostles Update" />
+          <FlatList
+            data={activeStories}
+            renderItem={({ item }) => (
+              <PostCard
+                post={item}
+                onReact={(type) => handleReact(item.id, type)}
+                onComment={() => router.push(`/stories/${item.id}`)}
+              />
+            )}
+            keyExtractor={(item) => item.id}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.primary]} />
+            }
+            ListEmptyComponent={
+              <EmptyState 
+                title="No Updates Yet" 
+                message="Check back later for new messages and updates from the Apostles." 
+                icon={<Rss size={48} color={theme.textSecondary} />} 
+              />
+            }
+            contentContainerStyle={[styles.listContent, { paddingTop: 16 }]}
           />
-        }
-        contentContainerStyle={[styles.listContent, { paddingTop: 16 }]}
-      />
+        </>
+      )}
     </View>
   );
 }
@@ -127,6 +166,13 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  backgroundImage: {
+    flex: 1,
+  },
+  imageStyle: {
+    resizeMode: 'cover',
+    opacity: 0.8,
   },
   listContent: {
     paddingBottom: 30,

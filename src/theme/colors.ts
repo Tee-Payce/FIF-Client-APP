@@ -1,10 +1,12 @@
+import { ImageBackground } from "expo-image";
+
 export const colors = {
   // Brand Colors
   primary: '#6A0DAD', // Purple
   secondary: '#D4AF37', // Gold
   white: '#FFFFFF',
   black: '#0A0A0A',
-  
+
   // Neutral Colors
   gray50: '#F9FAFB',
   gray100: '#F3F4F6',

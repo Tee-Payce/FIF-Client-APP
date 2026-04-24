@@ -8,9 +8,10 @@ interface AppHeaderProps {
   title: string;
   rightAction?: React.ReactNode;
   leftAction?: React.ReactNode;
+  transparent?: boolean;
 }
 
-export const AppHeader: React.FC<AppHeaderProps> = ({ title, rightAction, leftAction }) => {
+export const AppHeader: React.FC<AppHeaderProps> = ({ title, rightAction, leftAction, transparent = false }) => {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -18,8 +19,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ title, rightAction, leftAc
     <View style={[
       styles.container, 
       { 
-        backgroundColor: theme.surface, 
-        borderBottomColor: theme.border,
+        backgroundColor: transparent ? 'transparent' : theme.surface, 
+        borderBottomColor: transparent ? 'transparent' : theme.border,
         paddingTop: insets.top + 10,
       }
     ]}>

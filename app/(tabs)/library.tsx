@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, Modal, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, Modal, Dimensions, ImageBackground } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { useLibrary } from '../../context/LibraryContext';
@@ -98,9 +98,13 @@ export default function LibraryScreen() {
     return <Loader fullScreen />;
   }
 
-  return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <AppHeader title="Catalog" />
+  const backgroundImageSource = theme.isDark 
+    ? require('../../assets/images/app-background.png')
+    : null;
+
+  const content = (
+    <>
+      <AppHeader title="Catalog" transparent={theme.isDark} />
       <View style={[styles.tabContainer, { backgroundColor: theme.surface }]}>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'books' && { borderBottomColor: theme.primary, borderBottomWidth: 2 }]}
@@ -189,6 +193,22 @@ export default function LibraryScreen() {
           </View>
         </View>
       </Modal>
+    </>
+  );
+
+  return (
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      {backgroundImageSource ? (
+        <ImageBackground 
+          source={backgroundImageSource} 
+          style={styles.backgroundImage}
+          imageStyle={styles.imageStyle}
+        >
+          {content}
+        </ImageBackground>
+      ) : (
+        content
+      )}
     </View>
   );
 }
@@ -324,5 +344,12 @@ const styles = StyleSheet.create({
   modalActions: {
     width: '100%',
     gap: 12,
+  },
+  backgroundImage: {
+    flex: 1,
+  },
+  imageStyle: {
+    resizeMode: 'cover',
+    opacity: 0.8,
   },
 });

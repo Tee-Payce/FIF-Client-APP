@@ -54,12 +54,22 @@ export default function LibraryScreen() {
       socket.on('book:deleted', (deletedId: string) => {
         setBooks(prev => prev.filter(b => b.id !== deletedId));
       });
+
+      socket.on('sermon:created', (newSermon: any) => {
+        setSermons(prev => [newSermon, ...prev]);
+      });
+
+      socket.on('sermon:deleted', (deletedId: string) => {
+        setSermons(prev => prev.filter(s => s.id !== deletedId));
+      });
     }
 
     return () => {
       if (socket) {
         socket.off('book:created');
         socket.off('book:deleted');
+        socket.off('sermon:created');
+        socket.off('sermon:deleted');
       }
     };
   }, []);
@@ -95,8 +105,12 @@ export default function LibraryScreen() {
       style={[styles.card, { backgroundColor: theme.surface, shadowColor: theme.isDark ? 'transparent' : '#000' }]}
       onPress={() => router.push(`/sermon/${item.id}`)}
     >
-      <View style={[styles.cover, styles.coverPlaceholder]}>
-        <Text style={styles.coverIcon}>🎥</Text>
+      <View style={[styles.cover, styles.coverPlaceholder, { overflow: 'hidden' }]}>
+        {item.thumbnailUrl ? (
+          <ImageBackground source={{ uri: item.thumbnailUrl }} style={styles.cover} resizeMode="cover" />
+        ) : (
+          <Text style={styles.coverIcon}>🎥</Text>
+        )}
       </View>
       <Text style={[typography.body, { color: theme.text, marginTop: 8 }]} numberOfLines={2}>{item.title}</Text>
       <Text style={[typography.caption, { color: theme.textSecondary }]}>{item.duration}</Text>
@@ -107,7 +121,7 @@ export default function LibraryScreen() {
     return <Loader fullScreen />;
   }
 
-  const backgroundImageSource = theme.isDark 
+  const backgroundImageSource = theme.isDark
     ? require('../../assets/images/app-background.png')
     : null;
 
@@ -125,7 +139,7 @@ export default function LibraryScreen() {
           style={[styles.tab, activeTab === 'sermons' && { borderBottomColor: theme.primary, borderBottomWidth: 2 }]}
           onPress={() => setActiveTab('sermons')}
         >
-          <Text style={[typography.subtitle, { color: activeTab === 'sermons' ? theme.primary : theme.textSecondary }]}>Video Sermons</Text>
+          <Text style={[typography.subtitle, { color: activeTab === 'sermons' ? theme.primary : theme.textSecondary }]}>EGEA Archives</Text>
         </TouchableOpacity>
       </View>
       {activeTab === 'books' ? (
@@ -161,7 +175,7 @@ export default function LibraryScreen() {
               <>
                 <Text style={[typography.h3, { color: theme.text, marginBottom: 8, textAlign: 'center' }]}>{selectedBook.title}</Text>
                 <Text style={[typography.body, { color: theme.textSecondary, marginBottom: 16 }]}>By {selectedBook.author}</Text>
-                
+
                 <View style={[styles.modalDetailsRow, { borderColor: theme.border }]}>
                   <Text style={[typography.bodySmall, { color: theme.textSecondary }]}>Category: {selectedBook.category?.toUpperCase()}</Text>
                   <Text style={[typography.bodySmall, { color: theme.textSecondary }]}>Pages: {selectedBook.pages || 'N/A'}</Text>
@@ -172,34 +186,58 @@ export default function LibraryScreen() {
                 </Text>
 
                 <View style={styles.modalActions}>
-                  {isBookPurchased(selectedBook.id) || selectedBook.price === 0 ? (
-                    <Button 
-                      title="Read Online" 
-                      onPress={() => {
-                        setSelectedBook(null);
-                        router.push(`/book/${selectedBook.id}`);
-                      }} 
-                    />
-                  ) : (
-                    <Button 
-                      title={`Buy Book - $${selectedBook.price}`} 
-                      variant="secondary"
-                      onPress={() => {
-                        purchaseBook(selectedBook);
-                        setSelectedBook(null);
-                      }} 
-                    />
-                  )}
-                  
-                  <Button 
-                    title="Close" 
+                  {(() => {
+                    const tiers = ['free', 'standard', 'premium', 'vvip'];
+                    const userTierRank = tiers.indexOf(user?.subscriptionTier?.toLowerCase() || 'free');
+                    const bookCategoryRank = tiers.indexOf(selectedBook.category?.toLowerCase() || 'free');
+
+                    const hasTierAccess = userTierRank >= bookCategoryRank && bookCategoryRank > 1; // premium and above
+                    const isFree = selectedBook.price === 0 || bookCategoryRank <= 1;
+                    const isPurchased = isBookPurchased(selectedBook.id);
+
+                    const actions = [];
+
+                    // Always show Read Online if they have access or purchased it
+                    if (isPurchased || isFree || hasTierAccess) {
+                      actions.push(
+                        <Button
+                          key="read"
+                          title="Read Online"
+                          onPress={() => {
+                            setSelectedBook(null);
+                            router.push(`/book/${selectedBook.id}`);
+                          }}
+                        />
+                      );
+                    }
+
+                    // Show Buy Book if not purchased and it's not a free book
+                    if (!isPurchased && selectedBook.price > 0) {
+                      actions.push(
+                        <Button
+                          key="buy"
+                          title={`Buy Book - $${selectedBook.price}`}
+                          variant="secondary"
+                          onPress={() => {
+                            purchaseBook(selectedBook);
+                            setSelectedBook(null);
+                          }}
+                        />
+                      );
+                    }
+
+                    return actions;
+                  })()}
+
+                  <Button
+                    title="Close"
                     variant="ghost"
-                    onPress={() => setSelectedBook(null)} 
+                    onPress={() => setSelectedBook(null)}
                   />
                 </View>
 
-                <TouchableOpacity 
-                  style={{ marginTop: 16, flexDirection: 'row', alignItems: 'center' }} 
+                <TouchableOpacity
+                  style={{ marginTop: 16, flexDirection: 'row', alignItems: 'center' }}
                   onPress={() => {
                     setReviewBookId(selectedBook.id);
                     setSelectedBook(null);
@@ -230,8 +268,8 @@ export default function LibraryScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {backgroundImageSource ? (
-        <ImageBackground 
-          source={backgroundImageSource} 
+        <ImageBackground
+          source={backgroundImageSource}
           style={styles.backgroundImage}
           imageStyle={styles.imageStyle}
         >

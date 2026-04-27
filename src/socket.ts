@@ -4,8 +4,8 @@ import { API_BASE_URL } from './api/client';
 
 let socket: any;
 
-export const initSocket = async () => {
-  const token = await AsyncStorage.getItem('token');
+export const initSocket = async (providedToken?: string) => {
+  const token = providedToken || await AsyncStorage.getItem('token');
   
   if (socket) {
     socket.disconnect();

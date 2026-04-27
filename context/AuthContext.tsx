@@ -67,7 +67,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
     loadAuth();
-  }, []);
+
+    // Listen for real-time user updates
+    const handleUserUpdate = async (updatedUser: User) => {
+      if (user && updatedUser.id === user.id) {
+        setUser(updatedUser);
+        await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+    };
+
+    const s = initSocket().then(socket => {
+      socket.on('user:updated', handleUserUpdate);
+    });
+
+    return () => {
+      initSocket().then(socket => {
+        socket.off('user:updated', handleUserUpdate);
+      });
+    };
+  }, [user?.id]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
@@ -76,7 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       setToken(token);
       setUser(user);
-      await initSocket();
+      await initSocket(token);
       
       await AsyncStorage.setItem('token', token);
       await AsyncStorage.setItem('user', JSON.stringify(user));

@@ -7,6 +7,7 @@ import { Divider } from './ui/Divider';
 import { X, Moon, Sun, LogOut } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 interface SettingsModalProps {
   visible: boolean;
@@ -17,6 +18,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }
   const { theme, toggleTheme, mode } = useTheme();
   const { logout, user } = useAuth();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
 
   return (
     <Modal
@@ -65,9 +67,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }
           <View style={[styles.section, { marginTop: 20 }]}>
             <Button 
               title="Log Out" 
-              onPress={() => {
+              onPress={async () => {
                 onClose();
-                logout();
+                await logout();
+                // Explicitly navigate to login to ensure the stack resets
+                router.replace('/login');
               }} 
               variant="outline" 
               icon={<LogOut color={theme.primary} size={20} />}

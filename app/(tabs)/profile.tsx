@@ -41,7 +41,7 @@ export default function ProfileScreen() {
           
           <View style={[styles.badge, { backgroundColor: theme.secondary + '20' }]}>
             <Text style={[typography.caption, { color: theme.secondary, fontWeight: 'bold' }]}>
-              {user?.subscription?.toUpperCase() || 'STANDARD'} TIER
+              {user?.subscriptionTier?.toUpperCase() || 'STANDARD'} TIER
             </Text>
           </View>
         </View>

@@ -11,6 +11,8 @@ import { typography } from '../../src/theme/typography';
 import { AppHeader } from '../../components/ui/AppHeader';
 import { Loader } from '../../components/ui/Loader';
 import { Button } from '../../components/ui/Button';
+import { StarRating } from '../../components/StarRating';
+import { ReviewModal } from '../../components/ReviewModal';
 
 export default function LibraryScreen() {
   const [activeTab, setActiveTab] = useState<'books' | 'sermons'>('books');
@@ -23,6 +25,7 @@ export default function LibraryScreen() {
   const [sermons, setSermons] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBook, setSelectedBook] = useState<any>(null);
+  const [reviewBookId, setReviewBookId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -76,7 +79,13 @@ export default function LibraryScreen() {
           <Text style={styles.coverIconSmall}>📚</Text>
         </View>
         <Text style={[typography.caption, { color: theme.text, marginTop: 8, textAlign: 'center', fontWeight: 'bold' }]} numberOfLines={2}>{item.title}</Text>
-        <Text style={[typography.caption, { color: theme.textSecondary, fontSize: 10 }]} numberOfLines={1}>{item.author}</Text>
+        {item.totalReviews > 0 && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+            <Text style={[typography.caption, { color: theme.textSecondary, marginRight: 4 }]}>{item.averageRating?.toFixed(1)}</Text>
+            <StarRating rating={item.averageRating} readonly size={10} />
+          </View>
+        )}
+        <Text style={[typography.caption, { color: theme.textSecondary, fontSize: 10, marginTop: 4 }]} numberOfLines={1}>{item.author}</Text>
       </TouchableOpacity>
     );
   };
@@ -188,11 +197,33 @@ export default function LibraryScreen() {
                     onPress={() => setSelectedBook(null)} 
                   />
                 </View>
+
+                <TouchableOpacity 
+                  style={{ marginTop: 16, flexDirection: 'row', alignItems: 'center' }} 
+                  onPress={() => {
+                    setReviewBookId(selectedBook.id);
+                    setSelectedBook(null);
+                  }}
+                >
+                  <StarRating rating={selectedBook.averageRating || 0} readonly size={16} />
+                  <Text style={[typography.bodySmall, { color: theme.primary, marginLeft: 8 }]}>
+                    {selectedBook.totalReviews || 0} Reviews
+                  </Text>
+                </TouchableOpacity>
+
               </>
             )}
           </View>
         </View>
       </Modal>
+
+      {reviewBookId && (
+        <ReviewModal
+          visible={!!reviewBookId}
+          onClose={() => setReviewBookId(null)}
+          bookId={reviewBookId}
+        />
+      )}
     </>
   );
 

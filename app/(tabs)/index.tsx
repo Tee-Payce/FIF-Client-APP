@@ -10,6 +10,7 @@ import { AppHeader } from '../../components/ui/AppHeader';
 import { Loader } from '../../components/ui/Loader';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Rss } from 'lucide-react-native';
+import { CommentsModal } from '../../components/CommentsModal';
 
 export default function HomeScreen() {
   const { user } = useAuth();
@@ -17,6 +18,7 @@ export default function HomeScreen() {
   const [activeStories, setActiveStories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeCommentEntity, setActiveCommentEntity] = useState<{ id: string, type: 'story' } | null>(null);
   const router = useRouter();
 
   const fetchStories = async (isRefreshing = false) => {
@@ -48,10 +50,26 @@ export default function HomeScreen() {
         setActiveStories(prev => prev.filter(s => s.id !== deletedId));
       });
 
-      socket.on('reaction:update', ({ entityId, entityType, count }) => {
+      socket.on('reaction:update', ({ entityId, entityType, count }: any) => {
         if (entityType === 'story') {
           setActiveStories(prev => prev.map(s => 
             s.id === entityId ? { ...s, reactionCount: count } : s
+          ));
+        }
+      });
+      
+      socket.on('comment:created', (newComment: any) => {
+        if (newComment.entityType === 'story') {
+          setActiveStories(prev => prev.map(s =>
+            s.id === newComment.entityId ? { ...s, commentCount: (s.commentCount || 0) + 1 } : s
+          ));
+        }
+      });
+
+      socket.on('comment:deleted', (id: string, entityId: string, entityType: string) => {
+         if (entityType === 'story') {
+          setActiveStories(prev => prev.map(s =>
+            s.id === entityId ? { ...s, commentCount: Math.max(0, (s.commentCount || 0) - 1) } : s
           ));
         }
       });
@@ -62,13 +80,14 @@ export default function HomeScreen() {
         socket.off('story:created');
         socket.off('story:deleted');
         socket.off('reaction:update');
+        socket.off('comment:created');
+        socket.off('comment:deleted');
       }
     };
   }, []);
 
   const handleReact = async (storyId: string, type: string) => {
     try {
-      // Optimistic Update
       setActiveStories(prev => prev.map(s => {
         if (s.id === storyId) {
           const newHasReacted = !s.hasReacted;
@@ -84,7 +103,6 @@ export default function HomeScreen() {
       await reactToStory(storyId, type);
     } catch (error) {
       console.error('Reaction failed:', error);
-      // Revert on error if necessary
       fetchStories();
     }
   };
@@ -101,7 +119,7 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {backgroundImageSource && (
+      {backgroundImageSource ? (
         <ImageBackground 
           source={backgroundImageSource} 
           style={styles.backgroundImage}
@@ -114,25 +132,16 @@ export default function HomeScreen() {
               <PostCard
                 post={item}
                 onReact={(type) => handleReact(item.id, type)}
-                onComment={() => router.push(`/stories/${item.id}`)}
+                onComment={() => setActiveCommentEntity({ id: item.id, type: 'story' })}
               />
             )}
             keyExtractor={(item) => item.id}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.primary]} />
-            }
-            ListEmptyComponent={
-              <EmptyState 
-                title="No Updates Yet" 
-                message="Check back later for new messages and updates from the Apostles." 
-                icon={<Rss size={48} color={theme.textSecondary} />} 
-              />
-            }
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.primary]} />}
+            ListEmptyComponent={<EmptyState title="No Updates Yet" message="Check back later." icon={<Rss size={48} color={theme.textSecondary} />} />}
             contentContainerStyle={[styles.listContent, { paddingTop: 16 }]}
           />
         </ImageBackground>
-      )}
-      {!backgroundImageSource && (
+      ) : (
         <>
           <AppHeader title="Apostles Update" />
           <FlatList
@@ -141,40 +150,32 @@ export default function HomeScreen() {
               <PostCard
                 post={item}
                 onReact={(type) => handleReact(item.id, type)}
-                onComment={() => router.push(`/stories/${item.id}`)}
+                onComment={() => setActiveCommentEntity({ id: item.id, type: 'story' })}
               />
             )}
             keyExtractor={(item) => item.id}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.primary]} />
-            }
-            ListEmptyComponent={
-              <EmptyState 
-                title="No Updates Yet" 
-                message="Check back later for new messages and updates from the Apostles." 
-                icon={<Rss size={48} color={theme.textSecondary} />} 
-              />
-            }
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.primary]} />}
+            ListEmptyComponent={<EmptyState title="No Updates Yet" message="Check back later." icon={<Rss size={48} color={theme.textSecondary} />} />}
             contentContainerStyle={[styles.listContent, { paddingTop: 16 }]}
           />
         </>
+      )}
+
+      {activeCommentEntity && (
+        <CommentsModal
+          visible={!!activeCommentEntity}
+          onClose={() => setActiveCommentEntity(null)}
+          entityId={activeCommentEntity.id}
+          entityType={activeCommentEntity.type}
+        />
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  backgroundImage: {
-    flex: 1,
-  },
-  imageStyle: {
-    resizeMode: 'cover',
-    opacity: 0.8,
-  },
-  listContent: {
-    paddingBottom: 30,
-  },
+  container: { flex: 1 },
+  backgroundImage: { flex: 1 },
+  imageStyle: { resizeMode: 'cover', opacity: 0.8 },
+  listContent: { paddingBottom: 30 },
 });

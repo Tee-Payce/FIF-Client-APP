@@ -1,8 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const API_BASE_URL = 'http://192.168.1.43:5000';
-
+const API_BASE_URL = 'http://192.168.1.102:5000'; // switch to 'http://localhost:5000' for local emulator
 const client = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,

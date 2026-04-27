@@ -206,7 +206,9 @@ const PostCard: React.FC<PostCardProps> = ({ post, onReact, onComment }) => {
 
         <TouchableOpacity style={styles.actionButton} onPress={onComment}>
           <MessageCircle size={20} color={theme.icon} />
-          <Text style={[typography.bodySmall, { color: theme.textSecondary }]}>Comment</Text>
+          <Text style={[typography.bodySmall, { color: theme.textSecondary }]}>
+            {post.commentCount || 0}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionButton} onPress={handleShare}>

@@ -48,11 +48,19 @@ export default function LibraryScreen() {
     const socket = getSocket();
     if (socket) {
       socket.on('book:created', (newBook: any) => {
-        setBooks(prev => [newBook, ...prev]);
+        setBooks(prev => [{ ...newBook, cover: newBook.fileUrl, averageRating: 0, totalReviews: 0 }, ...prev]);
       });
 
       socket.on('book:deleted', (deletedId: string) => {
         setBooks(prev => prev.filter(b => b.id !== deletedId));
+      });
+
+      socket.on('sermon:created', (newSermon: any) => {
+        setSermons(prev => [newSermon, ...prev]);
+      });
+
+      socket.on('sermon:deleted', (deletedId: string) => {
+        setSermons(prev => prev.filter(s => s.id !== deletedId));
       });
     }
 
@@ -60,6 +68,8 @@ export default function LibraryScreen() {
       if (socket) {
         socket.off('book:created');
         socket.off('book:deleted');
+        socket.off('sermon:created');
+        socket.off('sermon:deleted');
       }
     };
   }, []);

@@ -23,8 +23,11 @@ const VideoMedia = ({ url }: { url: string }) => {
     <VideoView
       player={player}
       style={styles.media}
-      allowsFullscreen
-      allowsPictureInPicture
+      nativeControls={true}
+      fullscreenOptions={{
+        allowFullscreen: true,
+        fallback: 'native',
+      }}
     />
   );
 };

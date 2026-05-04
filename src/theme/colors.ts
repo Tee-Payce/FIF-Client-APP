@@ -16,7 +16,7 @@ export const colors = {
   gray500: '#6B7280',
   gray600: '#4B5563',
   gray700: '#374151',
-  gray800: '#1F2937',
+  gray800: '#67686aff',
   gray900: '#111827',
 
   // Semantic Colors

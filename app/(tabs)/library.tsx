@@ -202,24 +202,51 @@ export default function LibraryScreen() {
                 </Text>
 
                 <View style={styles.modalActions}>
-                  {isBookPurchased(selectedBook.id) || selectedBook.price === 0 ? (
-                    <Button 
-                      title="Read Online" 
-                      onPress={() => {
-                        setSelectedBook(null);
-                        router.push(`/book/${selectedBook.id}`);
-                      }} 
-                    />
-                  ) : (
-                    <Button 
-                      title={`Buy Book - $${selectedBook.price}`} 
-                      variant="secondary"
-                      onPress={() => {
-                        purchaseBook(selectedBook);
-                        setSelectedBook(null);
-                      }} 
-                    />
-                  )}
+                  {(() => {
+                    const tiers = ['free', 'standard', 'premium', 'vvip'];
+                    const userTier = user?.subscriptionTier?.toLowerCase() || 'free';
+                    const bookTier = (selectedBook.category || 'free').toLowerCase();
+                    
+                    const userRank = tiers.indexOf(userTier);
+                    const bookRank = tiers.indexOf(bookTier);
+                    
+                    const isPurchased = isBookPurchased(selectedBook.id);
+                    const hasTierAccess = userRank >= bookRank;
+                    const isFree = selectedBook.price === 0;
+
+                    const actions = [];
+
+                    // Show Read Online if purchased, free, or covered by tier
+                    if (isPurchased || isFree || hasTierAccess) {
+                      actions.push(
+                        <Button 
+                          key="read"
+                          title="Read Online" 
+                          onPress={() => {
+                            setSelectedBook(null);
+                            router.push(`/book/${selectedBook.id}`);
+                          }} 
+                        />
+                      );
+                    }
+
+                    // Show Buy Book if not purchased and not free
+                    if (!isPurchased && !isFree) {
+                      actions.push(
+                        <Button 
+                          key="buy"
+                          title={`Buy Book - $${selectedBook.price}`} 
+                          variant="secondary"
+                          onPress={() => {
+                            purchaseBook(selectedBook);
+                            setSelectedBook(null);
+                          }} 
+                        />
+                      );
+                    }
+
+                    return actions;
+                  })()}
                   
                   <Button 
                     title="Close" 

@@ -4,6 +4,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { useLibrary } from '../../context/LibraryContext';
 import { getBooks, getSecureBookUrl } from '../../src/api/books';
+import client from '../../src/api/client';
 
 import { WebView } from 'react-native-webview';
 import { Platform } from 'react-native';
@@ -47,14 +48,20 @@ export default function BookViewerScreen() {
   useEffect(() => {
     const fetchBookData = async () => {
       try {
-        const [booksRes, secureRes] = await Promise.all([
-          getBooks(),
+        const [bookRes, secureRes] = await Promise.all([
+          client.get(`/books/${id}`),
           getSecureBookUrl(id)
         ]);
         
-        const found = booksRes.data.find((b: any) => b.id === id);
-        setBook(found);
-        setSecureUrl(secureRes.data.downloadUrl || secureRes.data.url);
+        setBook(bookRes.data);
+        const url = secureRes.data.downloadUrl || secureRes.data.url;
+        
+        // On Android, Google Viewer often needs the URL to look like it ends in .pdf
+        if (Platform.OS === 'android' && url) {
+          setSecureUrl(`${url}&type=.pdf`);
+        } else {
+          setSecureUrl(url);
+        }
       } catch (err: any) {
         console.error('Error fetching book:', err);
         setError(err.response?.data?.message || 'You do not have access to this book.');

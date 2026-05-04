@@ -6,7 +6,7 @@ import { useAuth } from './AuthContext';
 export interface PurchasedBook {
   id: string;
   title: string;
-  pdfUrl?: string;
+  fileUrl?: string;
   localPath?: string;
 }
 
@@ -53,7 +53,7 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
           const backendPurchases = response.data.map((p: any) => ({
             id: p.bookId,
             title: p.book.title,
-            pdfUrl: p.book.pdfUrl,
+            fileUrl: p.book.fileUrl,
           }));
           setPurchasedBooks(backendPurchases);
           await AsyncStorage.setItem(localKey, JSON.stringify(backendPurchases));
@@ -77,7 +77,7 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const newPurchase: PurchasedBook = {
         id: book.id,
         title: book.title,
-        pdfUrl: book.pdfUrl,
+        fileUrl: book.fileUrl,
       };
       
       const updated = [...purchasedBooks, newPurchase];

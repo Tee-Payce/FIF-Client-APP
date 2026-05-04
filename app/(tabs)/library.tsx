@@ -13,7 +13,7 @@ import { Loader } from '../../components/ui/Loader';
 import { Button } from '../../components/ui/Button';
 import { StarRating } from '../../components/StarRating';
 import { ReviewModal } from '../../components/ReviewModal';
-
+import { Image } from 'expo-image';
 export default function LibraryScreen() {
   const [activeTab, setActiveTab] = useState<'books' | 'sermons'>('books');
   const { user } = useAuth();
@@ -80,14 +80,23 @@ export default function LibraryScreen() {
   };
 
   const renderBook = ({ item }: { item: any }) => {
+    const imageUrl = item.cover || item.coverUrl;
     return (
       <TouchableOpacity
         style={[styles.card3Col, { backgroundColor: theme.surface, shadowColor: theme.isDark ? 'transparent' : '#000' }]}
         onPress={() => setSelectedBook(item)}
       >
-        <View style={[styles.cover3Col, styles.coverPlaceholder]}>
-          <Text style={styles.coverIconSmall}>📚</Text>
-        </View>
+        {imageUrl ? (
+          <Image 
+            source={{ uri: encodeURI(imageUrl) }} 
+            style={styles.cover3Col} 
+            contentFit="cover" 
+          />
+        ) : (
+          <View style={[styles.cover3Col, styles.coverPlaceholder]}>
+            <Text style={styles.coverIconSmall}>📚</Text>
+          </View>
+        )}
         <Text style={[typography.caption, { color: theme.text, marginTop: 8, textAlign: 'center', fontWeight: 'bold' }]} numberOfLines={2}>{item.title}</Text>
         {item.totalReviews > 0 && (
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
@@ -100,18 +109,29 @@ export default function LibraryScreen() {
     );
   };
 
-  const renderSermon = ({ item }: { item: any }) => (
-    <TouchableOpacity
-      style={[styles.card, { backgroundColor: theme.surface, shadowColor: theme.isDark ? 'transparent' : '#000' }]}
-      onPress={() => router.push(`/sermon/${item.id}`)}
-    >
-      <View style={[styles.cover, styles.coverPlaceholder]}>
-        <Text style={styles.coverIcon}>🎥</Text>
-      </View>
-      <Text style={[typography.body, { color: theme.text, marginTop: 8 }]} numberOfLines={2}>{item.title}</Text>
-      <Text style={[typography.caption, { color: theme.textSecondary }]}>{item.duration}</Text>
-    </TouchableOpacity>
-  );
+  const renderSermon = ({ item }: { item: any }) => {
+    const imageUrl = item.coverUrl || item.thumbnailUrl;
+    return (
+      <TouchableOpacity
+        style={[styles.card, { backgroundColor: theme.surface, shadowColor: theme.isDark ? 'transparent' : '#000' }]}
+        onPress={() => router.push(`/sermon/${item.id}`)}
+      >
+        {imageUrl ? (
+          <Image 
+            source={{ uri: encodeURI(imageUrl) }} 
+            style={styles.cover} 
+            contentFit="cover" 
+          />
+        ) : (
+          <View style={[styles.cover, styles.coverPlaceholder]}>
+            <Text style={styles.coverIcon}>🎥</Text>
+          </View>
+        )}
+        <Text style={[typography.body, { color: theme.text, marginTop: 8 }]} numberOfLines={2}>{item.title}</Text>
+        <Text style={[typography.caption, { color: theme.textSecondary }]}>{item.duration}</Text>
+      </TouchableOpacity>
+    );
+  };
 
   if (loading) {
     return <Loader fullScreen />;

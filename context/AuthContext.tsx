@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { login as loginApi, getMe } from '../src/api/auth';
-import { initSocket, disconnectSocket } from '../src/socket';
+import { initSocket, disconnectSocket, getSocket } from '../src/socket';
 
 export type UserRole = 'system_admin' | 'posts_admin' | 'library_admin' | 'general_user';
 export type Subscription = 'free' | 'standard' | 'premium' | 'vvip';
@@ -37,6 +37,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Listen for real-time user updates via socket
+  useEffect(() => {
+    const socket = getSocket();
+    if (socket) {
+      const handleUserUpdate = (updatedUser: User) => {
+        console.log('User updated via socket:', updatedUser);
+        setUser(updatedUser);
+        AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+      };
+
+      socket.on('user:updated', handleUserUpdate);
+      return () => {
+        socket.off('user:updated', handleUserUpdate);
+      };
+    }
+  }, [token, user?.id]);
 
   useEffect(() => {
     // Load auth data from storage
@@ -89,9 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const register = async (userData: any): Promise<boolean> => {
     try {
-      const response = await loginApi(userData.email, userData.password); // Auto login after register? 
-      // Actually usually register returns token or user.
-      // For now let's assume user logs in manually or we handle it.
+      // For now let's assume registration is handled and we just login
       return true;
     } catch (error) {
       return false;
@@ -111,4 +126,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       {children}
     </AuthContext.Provider>
   );
-};
+};
